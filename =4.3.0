@@ -1,0 +1,53 @@
+Channels:
+ - conda-forge
+ - defaults
+Platform: osx-64
+Collecting package metadata (repodata.json): ...working... done
+Solving environment: ...working... done
+
+## Package Plan ##
+
+  environment location: /opt/anaconda3/envs/deepl
+
+  added / updated specs:
+    - gensim
+    - scipy
+
+
+The following packages will be downloaded:
+
+    package                    |            build
+    ---------------------------|-----------------
+    libblas-3.9.0              |1_h508aa58_netlib         194 KB  conda-forge
+    libcblas-3.9.0             |11_h9cb3e3b_netlib          46 KB  conda-forge
+    libgfortran-14.2.0         |     hef36b68_105         152 KB  conda-forge
+    libgfortran5-14.2.0        |     h58528f3_105         1.2 MB  conda-forge
+    liblapack-3.9.0            |11_h8d7f381_netlib         2.5 MB  conda-forge
+    libopenblas-0.3.29         |openmp_hbf64a52_0         5.9 MB  conda-forge
+    llvm-openmp-20.1.5         |       ha54dae1_0         299 KB  conda-forge
+    scipy-1.15.2               |  py312hd04560d_0        14.8 MB  conda-forge
+    ------------------------------------------------------------
+                                           Total:        25.1 MB
+
+The following NEW packages will be INSTALLED:
+
+  libblas            conda-forge/osx-64::libblas-3.9.0-1_h508aa58_netlib 
+  libcblas           conda-forge/osx-64::libcblas-3.9.0-11_h9cb3e3b_netlib 
+  liblapack          conda-forge/osx-64::liblapack-3.9.0-11_h8d7f381_netlib 
+
+The following packages will be UPDATED:
+
+  libgfortran        pkgs/main::libgfortran-5.0.0-11_3_0_h~ --> conda-forge::libgfortran-14.2.0-hef36b68_105 
+  libgfortran5       pkgs/main::libgfortran5-11.3.0-h9dfd6~ --> conda-forge::libgfortran5-14.2.0-h58528f3_105 
+  libopenblas        pkgs/main::libopenblas-0.3.21-h54e7dc~ --> conda-forge::libopenblas-0.3.29-openmp_hbf64a52_0 
+  llvm-openmp        pkgs/main::llvm-openmp-14.0.6-h0dcd29~ --> conda-forge::llvm-openmp-20.1.5-ha54dae1_0 
+  scipy              pkgs/main::scipy-1.15.1-py312hff39f35~ --> conda-forge::scipy-1.15.2-py312hd04560d_0 
+
+
+Proceed ([y]/n)? Invalid choice: q
+Proceed ([y]/n)? 
+
+Downloading and Extracting Packages: ...working... done
+Preparing transaction: ...working... done
+Verifying transaction: ...working... done
+Executing transaction: ...working... done
