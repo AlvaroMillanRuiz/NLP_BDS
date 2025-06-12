@@ -1,0 +1,517 @@
+---
+title: "KeyATM"
+author: "Alvaro millan"
+date: "2025-06-06"
+output: html_document
+---
+
+```{r}
+install.packages("keyATM")
+```
+
+```{r}
+#library(text)
+library(dplyr)
+library(keyATM)
+library(quanteda)
+library(quanteda.textstats)
+library(ggplot2)
+library(lubridate)
+```
+
+```{r}
+final_df <- read.csv("C:/Users/Alvaro Millan Ruiz/OneDrive/Escritorio/BDS/Block_5/NLP/Project/Final_df.csv")
+```
+
+```{r}
+# Prepare the dataframe for topic modelling
+topic_modelling_df <- final_df %>%
+  select(cleaned_speeches_no_postagging_expanded, Year, Income.Level, ISO.Code) %>%
+  rename(text = cleaned_speeches_no_postagging_expanded)
+```
+
+
+# Check for bigrams MANUALLY
+
+```{r}
+bigrams <- read.csv("C:/Users/Alvaro Millan Ruiz/OneDrive/Escritorio/BDS/Block_5/NLP/Project/bigrams.csv")
+```
+
+```{r}
+bigrams <- c(
+  "climate change",
+  "climate crisis",
+  "climate disaster", 
+  "climate risk", 
+  "climate action", 
+  "climate resilience", 
+  "climate political",
+  "climate agenda",
+  "cimate finance", 
+  "climate confidence", 
+  "climate event", 
+  "climate conference",
+  "global warm",
+  "party unfccc",    
+  "unfccc held", 
+  "within unfccc", 
+  "unfccc process", 
+  "paris agreement", 
+  "paris climate", 
+  "paris accord", 
+  "emission increase", 
+  "emission country", 
+  "global average temperature", 
+  "kyoto protocol", 
+  "carbon dioxide",
+  "carbon emission", 
+  "carbon footprint",
+  "ball roadmap", 
+  "greenhouse gas", 
+  "greenhouse effect"
+)
+
+tokenized_docs <- strsplit(topic_modelling_df$text, " ")
+
+# Convert your tokenized list to a quanteda tokens object
+tokens_obj <- tokens(as.list(tokenized_docs)) 
+
+
+tokens_obj <- tokens_compound(tokens_obj, phrase(bigrams))
+
+# 6. Create DFM and trim
+dfm_obj <- dfm(tokens_obj) %>%
+  dfm_trim(min_termfreq = 1, min_docfreq = 1)
+
+# 7. Remove empty documents (critical for KeyATM)
+dfm_obj <- dfm_subset(dfm_obj, ntoken(dfm_obj) > 0)
+
+kept_docs <- docnames(dfm_obj)  # These are "text1", "text2", etc.
+
+# 2. Create matching IDs in your original data
+topic_modelling_df <- topic_modelling_df %>%
+  mutate(doc_id = paste0("text", row_number()))  # Create matching IDs
+
+docvars <- topic_modelling_df %>%
+  filter(doc_id %in% kept_docs) %>%           # Keep only docs that exist in DFM
+  arrange(match(doc_id, kept_docs)) %>%       # Put in same order as DFM
+  transmute(
+    Year = as.numeric(Year),
+    Income.Group = factor(
+      Income.Level,
+      levels = c(1, 2, 3, 4),
+      labels = c("Low", "Lower-Middle", "Upper-Middle", "High") # first level ("Before2015") is treated as the baseline dummy variable
+    ),
+    Year_std = as.vector(scale(Year))
+  ) %>%
+  mutate(
+    Period = factor(
+      ifelse(Year < 2015, "Before2015", "After2015"), 
+      levels = c("Before2015", "After2015")
+    )
+  )
+
+# Ensure docvars rows match dfm_obj EXACTLY
+stopifnot(nrow(docvars) == ndoc(dfm_obj))
+
+# 3. First attach docvars to the DFM (proper quanteda method)
+docvars(dfm_obj) <- docvars  # Attach your prepared metadata
+
+# 4. Convert to keyATM format (preserving docvars)
+keyATM_docs <- keyATM_read(texts = dfm_obj)
+```
+
+
+```{r}
+keywords <- list(
+  Climate = c(
+  "climate_change",
+  "climate_crisis",
+  "climate_disaster", 
+  "climate_risk", 
+  "climate_action", 
+  "climate_resilience", 
+  "climate_political",
+  "climate_agenda",
+  "cimate_finance", 
+  "climate_confidence", 
+  "climate_event", 
+  "climate_conference",
+  "global_warm",
+  "party_unfccc",    
+  "unfccc_held", 
+  "within_unfccc", 
+  "unfccc_process", 
+  "paris_agreement", 
+  "paris_climate", 
+  "paris_accord", 
+  "emission_increase", 
+  "emission_country", 
+  "global_average_temperature", 
+  "kyoto_protocol", 
+  "carbon_dioxide",
+  "carbon_emission", 
+  "carbon_footprint",
+  "ball_roadmap", 
+  "greenhouse_gas", 
+  "greenhouse_effect"
+))
+```
+
+
+```{r}
+# 4. Now run keyATM with covariates
+#model <- keyATM(
+#  docs = keyATM_docs,
+#  keywords = keywords,
+#  no_keyword_topics = 1,
+#  model = "covariates",
+#  model_settings = list(
+#    #covariates_formula = ~ Income.Group * Year_std,
+#    covariates_formula = ~ Income.Group + Period,
+#    covariates_data = docvars(dfm_obj),  # Pull from attached docvars
+#    standardize = "none"
+#  ), 
+#   options = list(seed = 123)
+#)
+```
+```{r}
+#saveRDS(model, file = "C:/Users/Alvaro Millan Ruiz/OneDrive/Escritorio/BDS/Block_5/NLP/Project/keyATM_model.rds")
+```
+
+```{r}
+model <- readRDS("C:/Users/Alvaro Millan Ruiz/OneDrive/Escritorio/BDS/Block_5/NLP/Project/keyATM_model.rds")
+
+```
+
+
+```{r}
+covariates_info(model)
+```
+
+
+** The by_strata_DocTopic() function can display the marginal posterior means of document-topic distributions for each value of (discrete) covariates. **  
+
+```{r}
+strata_topic <- by_strata_DocTopic(
+  model, by_var = "PeriodAfter2015",
+  labels = c("1990_2014", "2015_24")
+)
+```
+
+
+** The figure shows the marginal posterior means of document-topic distributions and the 90% credible intervals of them for each value of covariates. ** 
+
+
+```{r}
+fig_doctopic <- plot(strata_topic, var_name = "Period", show_topic = 1)
+fig_doctopic
+```
+```{r}
+# Save to PNG using grid graphics
+# Extract the actual ggplot
+gg <- fig_doctopic$plot$gg
+
+# Save it
+ggsave(
+  filename = "C:/Users/Alvaro Millan Ruiz/OneDrive/Escritorio/BDS/Block_5/NLP/Project/fig_doctopic_Period_topic1.png",
+  plot = gg,
+  width = 8,
+  height = 6,
+  dpi = 300
+)
+
+
+```
+
+** We can visualize results by covariate with by = "covariate" argument. The plot below combines two panels in the previous plot and display in the same panel. ** 
+
+```{r}
+fig_doctopic <- plot(strata_topic, var_name = "Period", show_topic = 1, by = "covariate")
+fig_doctopic
+```
+
+
+** Using the output of the keyATM, we can calculate 90% credible intervals of the differences in the mean of document-topic distribution. **
+
+** Since we set the years prior to 2015 century dummy as the baseline when constructing factor for this variable, the comparison is the relative increase or decrease from the years prior to 2015 to the years from 2015 to 2024 century.
+
+```{r}
+theta1 <- strata_topic$theta[[1]]  # 18_19c
+theta2 <- strata_topic$theta[[2]]  # 20_21c
+theta_diff <- theta1[, c(1)] - theta2[, c(1)]  # focus on two topics
+theta_diff_quantile <- quantile(theta_diff, c(0.05, 0.5, 0.95))
+theta_diff_quantile
+```
+
+* This topic became significantly more prevalent after 2015 — with high certainty. * 
+
+*Furthermore, we can use the predict() function to get the predicted mean of the document-topic distribution for three party categories.*
+
+
+```{r}
+get_strata_estimates <- function(model, var, label) {
+  strata <- by_strata_DocTopic(model, by_var = var, labels = c(paste0("Non-", label), label))
+  summary(strata)[[label]]
+}
+
+est_high      <- get_strata_estimates(model, "Income.GroupHigh", "High")
+est_upp_mid   <- get_strata_estimates(model, "Income.GroupUpper-Middle", "Upper-Middle")
+est_low_mid   <- get_strata_estimates(model, "Income.GroupLower-Middle", "Lower-Middle")
+
+
+new_data <- covariates_get(model)
+
+new_data[, "Income.GroupHigh"] <- 0
+new_data[, "Income.GroupUpper-Middle"] <- 0
+new_data[, "Income.GroupLower-Middle"] <- 0
+pred <- predict(model, new_data, label = "Low")
+
+pred
+
+res <- bind_rows(est_high, est_upp_mid, est_low_mid, pred) %>%
+          filter(TopicID %in% 1)
+labels <- unique(res$label)
+
+library(ggplot2)
+ggplot(res, aes(x = label, ymin = Lower, ymax = Upper, group = Topic)) +
+  geom_errorbar(width = 0.1) +
+  coord_flip() +
+  facet_wrap(~Topic) +
+  geom_point(aes(x = label, y = Point)) +
+  scale_x_discrete(limits = rev(labels)) +
+  xlab("Income Group") +
+  ylab(expression(paste("Mean of ", theta))) +
+  theme_bw()
+
+```
+* The average prevalence (θ) of this topic in UN speeches, broken down by income group. *
+
+* All income groups discuss "Climate" relatively equally. * 
+* Low income group they discuss it in average way less * 
+
+*WHAT ABOUT ADDING A TIME THING 2015 ONWARDS* 
+
+
+```{r}
+docvars_2 <- topic_modelling_df %>%
+  filter(doc_id %in% kept_docs) %>%
+  arrange(match(doc_id, kept_docs)) %>%
+  transmute(
+    Year = as.numeric(Year),
+    Income.Group = factor(
+      Income.Level,
+      levels = c(1, 2, 3, 4),
+      labels = c("Low", "Lower-Middle", "Upper-Middle", "High")
+    ),
+    Period = factor(
+      ifelse(Year < 2015, "Before2015", "After2015"),
+      levels = c("Before2015", "After2015")
+    ),
+    GroupPeriod = paste0(Income.Group, "_", Period),
+    Year_std = as.vector(scale(Year))
+  )
+
+# Attach docvars to DFM
+stopifnot(nrow(docvars_2) == ndoc(dfm_obj))
+docvars(dfm_obj) <- docvars_2
+
+# Convert to keyATM format
+keyATM_docs <- keyATM_read(texts = dfm_obj)
+
+# Fit the keyATM model
+#model_2 <- keyATM(
+#  docs = keyATM_docs,
+#  keywords = keywords,
+#  no_keyword_topics = 1,
+#  model = "covariates",
+#  model_settings = list(
+#    covariates_formula = ~ GroupPeriod,
+#    covariates_data = docvars(dfm_obj),
+#    standardize = "none"
+#  ),
+#  options = list(seed = 123)
+#)
+```
+
+```{r}
+# Save model
+saveRDS(model_2, file = "C:/Users/Alvaro Millan Ruiz/OneDrive/Escritorio/BDS/Block_5/NLP/Project/keyATM_model_time2015.rds")
+```
+
+```{r}
+model_2 <- readRDS("C:/Users/Alvaro Millan Ruiz/OneDrive/Escritorio/BDS/Block_5/NLP/Project/keyATM_model_time2015.rds")
+```
+
+
+```{r}
+covariates_info(model_2)
+```
+
+
+```{r}
+model_2 <- readRDS("C:/Users/Alvaro Millan Ruiz/OneDrive/Escritorio/BDS/Block_5/NLP/Project/keyATM_model_time2015.rds")
+
+est_G1 <- get_strata_estimates(model_2, "GroupPeriodHigh_Before2015", "High_Before2015")
+
+est_G3 <- get_strata_estimates(model_2, "GroupPeriodUpper-Middle_Before2015", "Upper-Middle_Before2015")
+est_G4 <- get_strata_estimates(model_2, "GroupPeriodUpper-Middle_After2015", "Upper-Middle_After2015")
+
+est_G5 <- get_strata_estimates(model_2, "GroupPeriodLower-Middle_Before2015", "Lower-Middle_Before2015")
+est_G6 <- get_strata_estimates(model_2, "GroupPeriodLower-Middle_After2015", "Lower-Middle_After2015")
+
+est_G7 <- get_strata_estimates(model_2, "GroupPeriodLow_Before2015", "Low_Before2015")
+est_G8 <- get_strata_estimates(model_2, "GroupPeriodLow_After2015", "Low_After2015")
+
+
+new_data <- covariates_get(model_2)
+
+new_data[, "GroupPeriodHigh_Before2015"] <- 0
+new_data[, "GroupPeriodUpper-Middle_Before2015"] <- 0
+new_data[, "GroupPeriodUpper-Middle_After2015"] <- 0
+new_data[, "GroupPeriodLower-Middle_Before2015"] <- 0
+new_data[, "GroupPeriodUpper-Middle_After2015"] <- 0
+new_data[, "GroupPeriodLower-Middle_Before2015"] <- 0
+new_data[, "GroupPeriodLower-Middle_After2015"] <- 0
+new_data[, "GroupPeriodLow_Before2015"] <- 0
+new_data[, "GroupPeriodLow_After2015"] <- 0
+pred <- predict(model_2, new_data, label = "High_After2015")
+
+res <- bind_rows(est_G1,pred, est_G3, est_G4,est_G5,est_G6, est_G7, est_G8) %>%
+          filter(TopicID %in% 1)
+labels <- unique(res$label)
+
+library(ggplot2)
+ggplot(res, aes(x = label, ymin = Lower, ymax = Upper, group = Topic)) +
+  geom_errorbar(width = 0.1) +
+  coord_flip() +
+  facet_wrap(~Topic) +
+  geom_point(aes(x = label, y = Point)) +
+  scale_x_discrete(limits = rev(labels)) +
+  xlab("Income Group") +
+  ylab(expression(paste("Mean of ", theta))) +
+  theme_bw()
+
+
+```
+
+
+# TIME BIIITCH
+
+```{r}
+topic_modelling_df
+```
+
+
+```{r}
+# Define a function for processing one income level
+prepare_keyATM_data <- function(df, income_level, bigrams, keywords) {
+  topic_modelling <- df %>%
+    filter(Income.Level == income_level) %>%
+    mutate(doc_id = paste0("text", row_number()))
+
+  # Tokenize
+  tokenized_docs <- strsplit(topic_modelling$text, " ")
+  tokens_obj <- tokens(as.list(tokenized_docs))
+  tokens_obj <- tokens_compound(tokens_obj, phrase(bigrams))
+
+  # Create and trim DFM
+  dfm_obj <- dfm(tokens_obj) %>%
+    dfm_trim(min_termfreq = 1, min_docfreq = 1) %>%
+    dfm_subset(ntoken(.) > 0)
+
+  # Align metadata with DFM
+  docvars_time <- topic_modelling %>%
+  filter(doc_id %in% docnames(dfm_obj)) %>%
+  mutate(
+    Year = year(ymd(paste0(Year, "-01-01")))
+  ) %>%
+  arrange(Year) %>%
+  mutate(
+    Period = match(Year, sort(unique(Year)))  # ascending index starting at 1
+  )
+
+  stopifnot(nrow(docvars_time) == ndoc(dfm_obj))
+  
+  docvars(dfm_obj) <- docvars_time
+  
+  keyATM_docs <- keyATM_read(texts = dfm_obj)
+  
+  model_result <- keyATM(
+    docs              = keyATM_docs,
+    no_keyword_topics = 1,
+    keywords          = keywords,
+    model             = "dynamic",
+    model_settings    = list(
+      time_index = docvars_time$Period,  # <-- FIXED
+      num_states = 2
+    ),
+    options = list(seed = 123, store_theta = TRUE, thinning = 5)  # <-- typo fixed: "thinnin"
+  )
+  saveRDS(
+    model_result,
+    file = paste0(
+      "C:/Users/Alvaro Millan Ruiz/OneDrive/Escritorio/BDS/Block_5/NLP/Project/keyATM_model_time_",
+      income_level,
+      ".rds"
+    )
+  )
+
+  list(
+    model = model_result,
+    keyATM_docs = keyATM_docs,
+    docvars = docvars_time,
+    dfm = dfm_obj,
+    time_index = docvars_time$Period
+  )
+}
+
+income_level <- c(1, 2, 3, 4)
+
+model_outputs <- list()
+
+for (i in income_level) {
+  cat("Running model for income level", i, "\n")
+  model_outputs[[paste0("income_", i)]] <- prepare_keyATM_data(topic_modelling_df, i, bigrams, keywords)
+}
+```
+
+
+```{r}
+# Access model and metadata for income group 1
+model_1      <- model_outputs[["income_1"]]$model
+year_labels  <- sort((model_outputs[["income_1"]]$docvars$Year))
+
+# Plot with year labels
+plot_timetrend(model_1, time_index_label = year_labels, xlab = "Year")
+
+```
+
+```{r}
+# Access model and metadata for income group 1
+model_2      <- model_outputs[["income_2"]]$model
+year_labels  <- sort((model_outputs[["income_2"]]$docvars$Year))
+
+# Plot with year labels
+plot_timetrend(model_2, time_index_label = year_labels, xlab = "Year")
+```
+
+
+```{r}
+# Access model and metadata for income group 1
+model_3      <- model_outputs[["income_3"]]$model
+year_labels  <- sort((model_outputs[["income_3"]]$docvars$Year))
+
+# Plot with year labels
+plot_timetrend(model_3, time_index_label = year_labels, xlab = "Year")
+```
+
+```{r}
+# Access model and metadata for income group 1
+model_4      <- model_outputs[["income_4"]]$model
+year_labels  <- sort((model_outputs[["income_4"]]$docvars$Year))
+
+# Plot with year labels
+plot_timetrend(model_4, time_index_label = year_labels, xlab = "Year")
+```
+
