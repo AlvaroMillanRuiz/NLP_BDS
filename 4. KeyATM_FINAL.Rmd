@@ -38,38 +38,7 @@ bigrams <- read.csv("C:/Users/Alvaro Millan Ruiz/OneDrive/Escritorio/BDS/Block_5
 ```
 
 ```{r}
-bigrams <- c(
-  "climate change",
-  "climate crisis",
-  "climate disaster", 
-  "climate risk", 
-  "climate action", 
-  "climate resilience", 
-  "climate political",
-  "climate agenda",
-  "cimate finance", 
-  "climate confidence", 
-  "climate event", 
-  "climate conference",
-  "global warm",
-  "party unfccc",    
-  "unfccc held", 
-  "within unfccc", 
-  "unfccc process", 
-  "paris agreement", 
-  "paris climate", 
-  "paris accord", 
-  "emission increase", 
-  "emission country", 
-  "global average temperature", 
-  "kyoto protocol", 
-  "carbon dioxide",
-  "carbon emission", 
-  "carbon footprint",
-  "ball roadmap", 
-  "greenhouse gas", 
-  "greenhouse effect"
-)
+bigrams = c("climate change", "global warming", "global warm","cap and trade", "paris accord", "emissions trading", "global average temperature", "kyoto protocol", "climate resilience", "carbon dioxide", "climate politics", "framework convention on climate change", "ball roadmap", "greenhouse gas", "greenhouse effect", "climate mitigation", "climate action", "temperature", "extreme weather", "global environmental change", "global environment", "global environmental" ,"climate variability", "low carbon", "renewable energy", "carbon emission", "climate pollutant", "climate pollutants", "carbon tax", "carbon footprint", "carbon neutrality", "net-zero", "net zero", "climate crisis", "climate summit", "climate catastrophe", "climate justice", "climate emergency", "climate funding", "climate fund", "climate financing", "climate finance","climate peace", "climate agreement", "climate security", "climate ambition", "climate issue", "climate impact", "climate conference", "climate event", "climate challenge", "climate trust", "climate negotiation", "climate catastrophe", "climate risk", "climate goal", "climate change-related", "climate regime", "climate resilient", "climate policy", "carbon market", "carbon sink", "green climate", "green economy", "emission reduction", "emissions reduction", "carbon neutral", "carbon sink", "ozone layer", "emissions trading scheme")
 
 tokenized_docs <- strsplit(topic_modelling_df$text, " ")
 
@@ -124,38 +93,76 @@ keyATM_docs <- keyATM_read(texts = dfm_obj)
 
 ```{r}
 keywords <- list(
-  Climate = c(
-  "climate_change",
-  "climate_crisis",
-  "climate_disaster", 
-  "climate_risk", 
-  "climate_action", 
-  "climate_resilience", 
-  "climate_political",
-  "climate_agenda",
-  "cimate_finance", 
-  "climate_confidence", 
-  "climate_event", 
-  "climate_conference",
-  "global_warm",
-  "party_unfccc",    
-  "unfccc_held", 
-  "within_unfccc", 
-  "unfccc_process", 
-  "paris_agreement", 
-  "paris_climate", 
-  "paris_accord", 
-  "emission_increase", 
-  "emission_country", 
-  "global_average_temperature", 
-  "kyoto_protocol", 
-  "carbon_dioxide",
-  "carbon_emission", 
-  "carbon_footprint",
-  "ball_roadmap", 
-  "greenhouse_gas", 
-  "greenhouse_effect"
-))
+  Climate = c("climate_change", "global_warming", "global_warm","cap_and_trade", "paris_accord", "emissions_trading", "global_average_temperature", "kyoto_protocol", "climate_resilience", "carbon_dioxide", "climate_politics", "framework_convention_on_climate_change", "framework_convention_climate_change", "ball_roadmap", "greenhouse_gas", "greenhouse_effect", "climate_mitigation", "climate_action", "emissions", "temperature", "extreme weather", "global environmental_change", "global_environment", "global_environmental" ,"climate_variability", "low_carbon", "renewable_energy", "carbon_emission", "climate_pollutant", "climate_pollutants", "carbon_tax", "carbon_footprint", "carbon_neutrality", "net_-_zero", "net_zero", "climate_crisis", "climate_summit", "climate_catastrophe", "climate_justice", "climate_emergency", "climate_funding", "climate_fund", "climate_financing", "climate_finance","climate_peace", "climate_agreement", "climate_security", "climate_ambition", "climate_issue", "climate_impact", "climate_conference", "climate_event", "climate_challenge", "climate_trust", "climate_negotiation", "climate_catastrophe", "climate_risk", "climate_goal", "climate_change-related", "climate_regime", "climate_resilient", "climate_policy", "carbon_market", "carbon_sink", "green_climate", "green_economy", "emission_reduction", "emissions_reduction", "carbon_neutral", "carbon_sink", "ozone_layer", "emissions_trading_scheme", "ghg", "ghge", "co2", "ipcc")
+)
+```
+
+```{r}
+climate_keywords_dict <- list(
+  
+  # 1. Climate Science & Impacts
+  science_impacts = c(
+    "climate_change", "global_warm", "global_warming", "global_average_temperature",
+        "climate_variability", "extreme_weather", "climate_impact",
+        "greenhouse_effect", "temperature", "climate_catastrophe",
+        "climate_risk", "ozone_layer", "global_environmental_change",
+        "global_environmental", "global_environment", 
+        "climate_change-related", "climate_risk"
+  ),
+  
+  # 2. Policy & Agreements
+  policy_agreements = c(
+    "paris_accord", "kyoto_protocol", "unfccc", "climate_policy",
+        "framework_convention_on_climate_change", "framework_convention_climate_change",
+        "climate_agreement", "climate_regime", "climate_negotiation", "climate_ambition",
+        "climate_security", "ball_roadmap", "ipcc"
+  ),
+  
+  # 3. Carbon & Emissions
+  carbon_emissions = c(
+    "carbon_dioxide", "co2", "carbon_emission", "carbon_tax",
+        "carbon_footprint", "carbon_neutrality", "carbon_neutral",
+        "carbon_market", "carbon_sink", "low_carbon", "emissions",
+        "emission_reduction", "emissions_reduction", "ghg", "ghge",
+        "climate_pollutant", "climate_pollutants", "carbon_neutral",
+        "greenhouse_gas"
+  ),
+  
+  # 4. Climate Action & Solutions
+  action_solutions = c(
+     "climate_action", "climate_mitigation", "renewable_energy",
+        "climate_resilience", "climate_resilient", "green_economy",
+        "climate_funding", "climate_fund", "climate_financing", "climate_finance",
+        "net-zero", "net_zero", "green_climate", "cap_and_trade",
+        "emissions_trading scheme", "emissions_trading"
+  ),
+  
+  # 5. Sociopolitical Climate Issues
+  sociopolitical = c(
+    "climate_justice", "climate_emergency", "climate_crisis",
+        "climate_summit", "climate_politics", "climate_peace",
+        "climate_challenge", "climate_goal", "climate_issue",
+        "climate_event", "climate_conference", "climate_trust"
+  )
+)
+
+```
+
+
+```{r}
+# 4. Now run keyATM with covariates
+#model_dict <- keyATM(
+#  docs = keyATM_docs,
+#  keywords = climate_keywords_dict,
+#  no_keyword_topics = 1,
+#  model = "covariates",
+#  model_settings = list(
+#    covariates_formula = ~ Income.Group + Period,
+#    covariates_data = docvars(dfm_obj),  # Pull from attached docvars
+#    standardize = "none"
+#  ), 
+#   options = list(seed = 123)
+#)
 ```
 
 
@@ -175,21 +182,24 @@ keywords <- list(
 #   options = list(seed = 123)
 #)
 ```
+
+
 ```{r}
 #saveRDS(model, file = "C:/Users/Alvaro Millan Ruiz/OneDrive/Escritorio/BDS/Block_5/NLP/Project/keyATM_model.rds")
+
+#saveRDS(model_dict, file = "C:/Users/Alvaro Millan Ruiz/OneDrive/Escritorio/BDS/Block_5/NLP/Project/keyATM_model_dict.rds")
 ```
 
 ```{r}
+# Choose whicever u want to test for, the one that is suborganized into different topics, keyATM_model_dict.rds, or the ones that is simple keyATM_model.rds
+
 model <- readRDS("C:/Users/Alvaro Millan Ruiz/OneDrive/Escritorio/BDS/Block_5/NLP/Project/keyATM_model.rds")
 
+#model <- readRDS("C:/Users/Alvaro Millan Ruiz/OneDrive/Escritorio/BDS/Block_5/NLP/Project/keyATM_model_dict.rds")
 ```
 
 
-```{r}
-covariates_info(model)
-```
-
-
+2
 ** The by_strata_DocTopic() function can display the marginal posterior means of document-topic distributions for each value of (discrete) covariates. **  
 
 ```{r}
@@ -204,43 +214,53 @@ strata_topic <- by_strata_DocTopic(
 
 
 ```{r}
-fig_doctopic <- plot(strata_topic, var_name = "Period", show_topic = 1)
+#fig_doctopic <- plot(strata_topic, var_name = "Period", show_topic = c(1,2,3,4,5))
+fig_doctopic <- plot(strata_topic, var_name = "Period", show_topic = c(1))
 fig_doctopic
-```
-```{r}
-# Save to PNG using grid graphics
-# Extract the actual ggplot
-gg <- fig_doctopic$plot$gg
-
-# Save it
-ggsave(
-  filename = "C:/Users/Alvaro Millan Ruiz/OneDrive/Escritorio/BDS/Block_5/NLP/Project/fig_doctopic_Period_topic1.png",
-  plot = gg,
-  width = 8,
-  height = 6,
-  dpi = 300
-)
-
-
 ```
 
 ** We can visualize results by covariate with by = "covariate" argument. The plot below combines two panels in the previous plot and display in the same panel. ** 
 
 ```{r}
-fig_doctopic <- plot(strata_topic, var_name = "Period", show_topic = 1, by = "covariate")
-fig_doctopic
-```
+# run only if you have selected the keyATM_model_dict.rds
+key_viz <- visualize_keywords(
+  docs = keyATM_docs,
+  keywords = climate_keywords_dict,
+  prune = TRUE, # or even Inf to show everything
+  label_size = 2.5
+)
 
+viz_data_filtered <- values_fig(key_viz)
+
+
+climate_keyword_plot <- viz_data_filtered %>%
+  filter(`Proportion(%)` > 0) %>%
+  ggplot(aes(x = reorder(Word, `Proportion(%)`), y = `Proportion(%)`, fill = Topic)) +
+  geom_col() +
+  coord_flip() +
+  labs(x = "Keyword", y = "Proportion (%)", fill = "Topic Group") +
+  theme_minimal() +
+  theme(
+    plot.background = element_rect(fill = "white", color = NA),
+    panel.background = element_rect(fill = "white", color = NA)
+  )
+
+
+climate_keyword_plot
+```
 
 ** Using the output of the keyATM, we can calculate 90% credible intervals of the differences in the mean of document-topic distribution. **
 
-** Since we set the years prior to 2015 century dummy as the baseline when constructing factor for this variable, the comparison is the relative increase or decrease from the years prior to 2015 to the years from 2015 to 2024 century.
+** Since we set the years prior to 2015 dummy as the baseline when constructing factor for this variable, the comparison is the relative increase or decrease from the years prior to 2015 to the years from 2015 to 2024. 
 
 ```{r}
-theta1 <- strata_topic$theta[[1]]  # 18_19c
-theta2 <- strata_topic$theta[[2]]  # 20_21c
-theta_diff <- theta1[, c(1)] - theta2[, c(1)]  # focus on two topics
-theta_diff_quantile <- quantile(theta_diff, c(0.05, 0.5, 0.95))
+theta1 <- strata_topic$theta[[1]]  # Topic proportions for 1990–2014
+theta2 <- strata_topic$theta[[2]]  # Topic proportions for 2015–2024
+#theta_diff <- theta2[, c(1,2,3,4,5)] - theta1[, c(1,2,3,4,5)]  # focus on two topics
+theta_diff <- theta2[, c(1)] - theta1[, c(1)]
+theta_diff_quantile <- quantile(theta_diff, c(0.05, 0.5, 0.95)) # Difference in topic 1
+#theta_diff_quantile <- apply(theta_diff, 2, quantile, probs = c(0.05, 0.5, 0.95)) # prevalence Lower bound of the 90% credible interval. Median of the difference (i.e. central estimate). Upper bound of the 90% credible interval.
+# By how much did the average prevalence of topic 1 (Climate) change between 1990–2014 and 2015–2024? 
 theta_diff_quantile
 ```
 
@@ -267,11 +287,15 @@ new_data[, "Income.GroupUpper-Middle"] <- 0
 new_data[, "Income.GroupLower-Middle"] <- 0
 pred <- predict(model, new_data, label = "Low")
 
-pred
-
 res <- bind_rows(est_high, est_upp_mid, est_low_mid, pred) %>%
           filter(TopicID %in% 1)
+
+#res <- bind_rows(est_high, est_upp_mid, est_low_mid, pred) %>%
+          #filter(TopicID %in% c(1, 2, 3, 4, 5))
 labels <- unique(res$label)
+
+# The mean topic prevalence (theta) for Topic 1 across income groups. 
+# Error bars show 90% credible intervals.
 
 library(ggplot2)
 ggplot(res, aes(x = label, ymin = Lower, ymax = Upper, group = Topic)) +
@@ -284,6 +308,7 @@ ggplot(res, aes(x = label, ymin = Lower, ymax = Upper, group = Topic)) +
   ylab(expression(paste("Mean of ", theta))) +
   theme_bw()
 
+# θ (theta) represents the mean document-topic distribution — specifically, the average proportion of a document that is about Topic 1 ("Climate") for each income group
 ```
 * The average prevalence (θ) of this topic in UN speeches, broken down by income group. *
 
@@ -320,38 +345,32 @@ docvars(dfm_obj) <- docvars_2
 keyATM_docs <- keyATM_read(texts = dfm_obj)
 
 # Fit the keyATM model
-#model_2 <- keyATM(
-#  docs = keyATM_docs,
-#  keywords = keywords,
-#  no_keyword_topics = 1,
-#  model = "covariates",
-#  model_settings = list(
-#    covariates_formula = ~ GroupPeriod,
-#    covariates_data = docvars(dfm_obj),
-#    standardize = "none"
-#  ),
-#  options = list(seed = 123)
-#)
+model_2 <- keyATM(
+  docs = keyATM_docs,
+  keywords = climate_keywords_dict,
+  no_keyword_topics = 1,
+  model = "covariates",
+  model_settings = list(
+    covariates_formula = ~ GroupPeriod,
+    covariates_data = docvars(dfm_obj),
+    standardize = "none"
+  ),
+  options = list(seed = 123)
+)
 ```
 
 ```{r}
 # Save model
-saveRDS(model_2, file = "C:/Users/Alvaro Millan Ruiz/OneDrive/Escritorio/BDS/Block_5/NLP/Project/keyATM_model_time2015.rds")
+saveRDS(model_2, file = "C:/Users/Alvaro Millan Ruiz/OneDrive/Escritorio/BDS/Block_5/NLP/Project/keyATM_model_time2015_dict.rds")
 ```
 
 ```{r}
-model_2 <- readRDS("C:/Users/Alvaro Millan Ruiz/OneDrive/Escritorio/BDS/Block_5/NLP/Project/keyATM_model_time2015.rds")
+model_2 <- readRDS("C:/Users/Alvaro Millan Ruiz/OneDrive/Escritorio/BDS/Block_5/NLP/Project/keyATM_model_time2015_dict.rds")
 ```
 
 
-```{r}
-covariates_info(model_2)
-```
-
 
 ```{r}
-model_2 <- readRDS("C:/Users/Alvaro Millan Ruiz/OneDrive/Escritorio/BDS/Block_5/NLP/Project/keyATM_model_time2015.rds")
-
 est_G1 <- get_strata_estimates(model_2, "GroupPeriodHigh_Before2015", "High_Before2015")
 
 est_G3 <- get_strata_estimates(model_2, "GroupPeriodUpper-Middle_Before2015", "Upper-Middle_Before2015")
@@ -378,7 +397,7 @@ new_data[, "GroupPeriodLow_After2015"] <- 0
 pred <- predict(model_2, new_data, label = "High_After2015")
 
 res <- bind_rows(est_G1,pred, est_G3, est_G4,est_G5,est_G6, est_G7, est_G8) %>%
-          filter(TopicID %in% 1)
+          filter(TopicID %in% c(1, 2, 3, 4, 5))
 labels <- unique(res$label)
 
 library(ggplot2)
@@ -488,7 +507,7 @@ plot_timetrend(model_1, time_index_label = year_labels, xlab = "Year")
 ```
 
 ```{r}
-# Access model and metadata for income group 1
+# Access model and metadata for income group 2
 model_2      <- model_outputs[["income_2"]]$model
 year_labels  <- sort((model_outputs[["income_2"]]$docvars$Year))
 
@@ -514,4 +533,115 @@ year_labels  <- sort((model_outputs[["income_4"]]$docvars$Year))
 # Plot with year labels
 plot_timetrend(model_4, time_index_label = year_labels, xlab = "Year")
 ```
+
+
+```{r}
+# Define a function for processing one income level
+prepare_keyATM_data <- function(df, income_level, bigrams, climate_keywords_dict) {
+  topic_modelling <- df %>%
+    filter(Income.Level == income_level) %>%
+    mutate(doc_id = paste0("text", row_number()))
+
+  # Tokenize
+  tokenized_docs <- strsplit(topic_modelling$text, " ")
+  tokens_obj <- tokens(as.list(tokenized_docs))
+  tokens_obj <- tokens_compound(tokens_obj, phrase(bigrams))
+
+  # Create and trim DFM
+  dfm_obj <- dfm(tokens_obj) %>%
+    dfm_trim(min_termfreq = 1, min_docfreq = 1) %>%
+    dfm_subset(ntoken(.) > 0)
+
+  # Align metadata with DFM
+  docvars_time <- topic_modelling %>%
+  filter(doc_id %in% docnames(dfm_obj)) %>%
+  mutate(
+    Year = year(ymd(paste0(Year, "-01-01")))
+  ) %>%
+  arrange(Year) %>%
+  mutate(
+    Period = match(Year, sort(unique(Year)))  # ascending index starting at 1
+  )
+
+  stopifnot(nrow(docvars_time) == ndoc(dfm_obj))
+  
+  docvars(dfm_obj) <- docvars_time
+  
+  keyATM_docs <- keyATM_read(texts = dfm_obj)
+  
+  model_result <- keyATM(
+    docs              = keyATM_docs,
+    no_keyword_topics = 1,
+    keywords          = climate_keywords_dict,
+    model             = "dynamic",
+    model_settings    = list(
+      time_index = docvars_time$Period,  # <-- FIXED
+      num_states = 2
+    ),
+    options = list(seed = 123, store_theta = TRUE, thinning = 5)  # <-- typo fixed: "thinnin"
+  )
+  saveRDS(
+    model_result,
+    file = paste0(
+      "C:/Users/Alvaro Millan Ruiz/OneDrive/Escritorio/BDS/Block_5/NLP/Project/keyATM_model_time_dict",
+      income_level,
+      ".rds"
+    )
+  )
+
+  list(
+    model = model_result,
+    keyATM_docs = keyATM_docs,
+    docvars = docvars_time,
+    dfm = dfm_obj,
+    time_index = docvars_time$Period
+  )
+}
+
+income_level <- c(1, 2, 3, 4)
+
+model_outputs <- list()
+
+for (i in income_level) {
+  cat("Running model for income level", i, "\n")
+  model_outputs[[paste0("income_", i)]] <- prepare_keyATM_data(topic_modelling_df, i, bigrams, climate_keywords_dict)
+}
+```
+
+```{r}
+# Access model and metadata for income group 1
+model_1      <- model_outputs[["income_1"]]$model
+year_labels  <- sort((model_outputs[["income_1"]]$docvars$Year))
+
+# Plot with year labels
+plot_timetrend(model_1, time_index_label = year_labels, xlab = "Year")
+```
+
+```{r}
+# Access model and metadata for income group 2
+model_2      <- model_outputs[["income_2"]]$model
+year_labels  <- sort((model_outputs[["income_2"]]$docvars$Year))
+
+# Plot with year labels
+plot_timetrend(model_2, time_index_label = year_labels, xlab = "Year")
+```
+
+```{r}
+# Access model and metadata for income group 2
+model_3      <- model_outputs[["income_3"]]$model
+year_labels  <- sort((model_outputs[["income_3"]]$docvars$Year))
+
+# Plot with year labels
+plot_timetrend(model_3, time_index_label = year_labels, xlab = "Year")
+```
+
+```{r}
+# Access model and metadata for income group 4
+model_4      <- model_outputs[["income_4"]]$model
+year_labels  <- sort((model_outputs[["income_4"]]$docvars$Year))
+
+# Plot with year labels
+plot_timetrend(model_4, time_index_label = year_labels, xlab = "Year")
+```
+
 
