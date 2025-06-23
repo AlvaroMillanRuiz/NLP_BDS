@@ -2,12 +2,11 @@
 title: "KeyATM"
 author: "Alvaro millan"
 date: "2025-06-06"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
 ---
-
-```{r}
-install.packages("keyATM")
-```
 
 ```{r}
 #library(text)
@@ -318,50 +317,50 @@ ggplot(res, aes(x = label, ymin = Lower, ymax = Upper, group = Topic)) +
 *WHAT ABOUT ADDING A TIME THING 2015 ONWARDS* 
 
 
-```{r}
-docvars_2 <- topic_modelling_df %>%
-  filter(doc_id %in% kept_docs) %>%
-  arrange(match(doc_id, kept_docs)) %>%
-  transmute(
-    Year = as.numeric(Year),
-    Income.Group = factor(
-      Income.Level,
-      levels = c(1, 2, 3, 4),
-      labels = c("Low", "Lower-Middle", "Upper-Middle", "High")
-    ),
-    Period = factor(
-      ifelse(Year < 2015, "Before2015", "After2015"),
-      levels = c("Before2015", "After2015")
-    ),
-    GroupPeriod = paste0(Income.Group, "_", Period),
-    Year_std = as.vector(scale(Year))
-  )
+```{r }
+#docvars_2 <- topic_modelling_df %>%
+#  filter(doc_id %in% kept_docs) %>%
+#  arrange(match(doc_id, kept_docs)) %>%
+#  transmute(
+#    Year = as.numeric(Year),
+#    Income.Group = factor(
+#      Income.Level,
+#      levels = c(1, 2, 3, 4),
+#      labels = c("Low", "Lower-Middle", "Upper-Middle", "High")
+#    ),
+#    Period = factor(
+#      ifelse(Year < 2015, "Before2015", "After2015"),
+#      levels = c("Before2015", "After2015")
+#    ),
+#    GroupPeriod = paste0(Income.Group, "_", Period),
+#    Year_std = as.vector(scale(Year))
+#  )
 
 # Attach docvars to DFM
-stopifnot(nrow(docvars_2) == ndoc(dfm_obj))
-docvars(dfm_obj) <- docvars_2
+#stopifnot(nrow(docvars_2) == ndoc(dfm_obj))
+#docvars(dfm_obj) <- docvars_2
 
 # Convert to keyATM format
-keyATM_docs <- keyATM_read(texts = dfm_obj)
+#keyATM_docs <- keyATM_read(texts = dfm_obj)
 
 # Fit the keyATM model
-model_2 <- keyATM(
-  docs = keyATM_docs,
-  keywords = climate_keywords_dict,
-  no_keyword_topics = 1,
-  model = "covariates",
-  model_settings = list(
-    covariates_formula = ~ GroupPeriod,
-    covariates_data = docvars(dfm_obj),
-    standardize = "none"
-  ),
-  options = list(seed = 123)
-)
+#model_2 <- keyATM(
+#  docs = keyATM_docs,
+#  keywords = climate_keywords_dict,
+#  no_keyword_topics = 1,
+#  model = "covariates",
+#  model_settings = list(
+#    covariates_formula = ~ GroupPeriod,
+#    covariates_data = docvars(dfm_obj),
+#    standardize = "none"
+#  ),
+#  options = list(seed = 123)
+#)
 ```
 
 ```{r}
 # Save model
-saveRDS(model_2, file = "C:/Users/Alvaro Millan Ruiz/OneDrive/Escritorio/BDS/Block_5/NLP/Project/keyATM_model_time2015_dict.rds")
+#saveRDS(model_2, file = "C:/Users/Alvaro Millan Ruiz/OneDrive/Escritorio/BDS/Block_5/NLP/Project/keyATM_model_time2015_dict.rds")
 ```
 
 ```{r}
@@ -418,11 +417,11 @@ ggplot(res, aes(x = label, ymin = Lower, ymax = Upper, group = Topic)) +
 # TIME BIIITCH
 
 ```{r}
-topic_modelling_df
+#topic_modelling_df
 ```
 
 
-```{r}
+```{r, echo=FALSE}
 # Define a function for processing one income level
 prepare_keyATM_data <- function(df, income_level, bigrams, keywords) {
   topic_modelling <- df %>%
