@@ -7,10 +7,21 @@ output:
   html_document: default
   word_document: default
 ---
+```{r}
+R.version.string
+# Or:
+getRversion()
+```
+
+
+```{r}
+install.packages("libcurl")
+# install.packages("quanteda")
+```
+
 
 ```{r}
 #library(text)
-library(dplyr)
 library(keyATM)
 library(quanteda)
 library(quanteda.textstats)
@@ -19,7 +30,7 @@ library(lubridate)
 ```
 
 ```{r}
-final_df <- read.csv("C:/Users/Alvaro Millan Ruiz/OneDrive/Escritorio/BDS/Block_5/NLP/Project/Final_df.csv")
+final_df <- read.csv("C:/Users/alvar/OneDrive/Escritorio/BDS/Block_5/NLP/Project/Final_df.csv")
 ```
 
 ```{r}
