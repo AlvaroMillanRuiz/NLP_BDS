@@ -13,7 +13,7 @@ output:
 
 
 ```{r}
-install.packages("moments")
+install.packages("plotly")
 
 # install.packages("quanteda")
 ```
@@ -39,11 +39,6 @@ topic_modelling_df <- final_df %>%
   select(cleaned_speeches_postagging_expanded, Year, Income.Level, ISO.Code) %>%
   rename(text = cleaned_speeches_postagging_expanded)
 ```
-
-```{r}
-
-```
-
 
 
 # Check for bigrams MANUALLY
@@ -213,6 +208,11 @@ model <- readRDS("C:/Users/alvar/OneDrive/Escritorio/BDS/Block_5/NLP/Project/key
 model_dict <- readRDS("C:/Users/alvar/OneDrive/Escritorio/BDS/Block_5/NLP/Project/keyATM_model_dict.rds")
 ```
 
+```{r}
+model_dict$
+```
+
+
 
 2
 ** The by_strata_DocTopic() function can display the marginal posterior means of document-topic distributions for each value of (discrete) covariates. **  
@@ -376,7 +376,6 @@ labels <- unique(res$label)
 # The mean topic prevalence (theta) for Topic 1 across income groups. 
 # Error bars show 90% credible intervals.
 
-library(ggplot2)
 ggplot(res, aes(x = label, ymin = Lower, ymax = Upper, group = Topic)) +
   geom_errorbar(width = 0.1) +
   coord_flip() +
@@ -500,8 +499,7 @@ res$label <- label_map[res$label]
 
 labels <- unique(res$label)
 
-library(ggplot2)
-ggplot(res, aes(x = label, ymin = Lower, ymax = Upper, group = Topic)) +
+plot_1 <- ggplot(res, aes(x = label, ymin = Lower, ymax = Upper, group = Topic)) +
   geom_errorbar(width = 0.1) +
   coord_flip() +
   facet_wrap(~Topic) +
@@ -510,6 +508,17 @@ ggplot(res, aes(x = label, ymin = Lower, ymax = Upper, group = Topic)) +
   xlab("Income Group") +
   ylab(expression(paste("Mean of ", theta))) +
   theme_bw()
+
+plot_1
+
+ggsave(
+  filename = "Topics change from 1990-2014 to 2015-2024 for different country incomes PLOTS.PNG",
+  plot = plot_1,
+  path = "C:/Users/alvar/OneDrive/Escritorio/BDS/Block_5/NLP/Project/NLP_BDS",
+  width = 10,       # adjust width (in inches)
+  height = 6,       # adjust height (in inches)
+  dpi = 300         # high-resolution for print
+)
 
 ```
 
@@ -534,19 +543,30 @@ new_data[, "GroupPeriodHigh_Before2015"] <- 0
 new_data[, "GroupPeriodUpper-Middle_Before2015"] <- 0
 new_data[, "GroupPeriodUpper-Middle_After2015"] <- 0
 new_data[, "GroupPeriodLower-Middle_Before2015"] <- 0
-new_data[, "GroupPeriodUpper-Middle_After2015"] <- 0
-new_data[, "GroupPeriodLower-Middle_Before2015"] <- 0
 new_data[, "GroupPeriodLower-Middle_After2015"] <- 0
 new_data[, "GroupPeriodLow_Before2015"] <- 0
 new_data[, "GroupPeriodLow_After2015"] <- 0
 pred <- predict(model_2, new_data, label = "High_After2015")
 
 res <- bind_rows(est_G1,pred, est_G3, est_G4,est_G5,est_G6, est_G7, est_G8) %>%
-          filter(TopicID %in% c(1, 2, 3, 4, 5))
+          filter(TopicID %in% c(1))
+
+label_map <- c(
+  "High_Before2015" = "High (1990–2014)",
+  "High_After2015" = "High (2015–24)",
+  "Upper-Middle_Before2015" = "Upper-Middle (1990–2014)",
+  "Upper-Middle_After2015" = "Upper-Middle (2015–24)",
+  "Lower-Middle_Before2015" = "Lower-Middle (1990–2014)",
+  "Lower-Middle_After2015" = "Lower-Middle (2015–24)",
+  "Low_Before2015" = "Low (1990–2014)",
+  "Low_After2015" = "Low (2015–24)"
+)
+
+res$label <- label_map[res$label]
+
 labels <- unique(res$label)
 
-library(ggplot2)
-ggplot(res, aes(x = label, ymin = Lower, ymax = Upper, group = Topic)) +
+plot_1 <- ggplot(res, aes(x = label, ymin = Lower, ymax = Upper, group = Topic)) +
   geom_errorbar(width = 0.1) +
   coord_flip() +
   facet_wrap(~Topic) +
@@ -555,6 +575,17 @@ ggplot(res, aes(x = label, ymin = Lower, ymax = Upper, group = Topic)) +
   xlab("Income Group") +
   ylab(expression(paste("Mean of ", theta))) +
   theme_bw()
+plot_1
+
+ggsave(
+  filename = "Topic change from 1990-2014 to 2015-2024 for different country incomes PLOTS.PNG",
+  plot = plot_1,
+  path = "C:/Users/alvar/OneDrive/Escritorio/BDS/Block_5/NLP/Project/NLP_BDS",
+  width = 10,       # adjust width (in inches)
+  height = 6,       # adjust height (in inches)
+  dpi = 300         # high-resolution for print
+)
+
 ```
 
 
@@ -614,7 +645,7 @@ prepare_keyATM_data <- function(df, income_level, bigrams, keywords) {
   saveRDS(
     model_result,
     file = paste0(
-      "C:/Users/Alvaro Millan Ruiz/OneDrive/Escritorio/BDS/Block_5/NLP/Project/keyATM_model_time_",
+      "C:/Users/alvar/OneDrive/Escritorio/BDS/Block_5/NLP/Project/keyATM_model_time_",
       income_level,
       ".rds"
     )
@@ -641,42 +672,151 @@ for (i in income_level) {
 
 
 ```{r}
+key_viz <- visualize_keywords(
+  docs = keyATM_docs,
+  keywords = climate_keywords_dict,
+  prune = TRUE, # or even Inf to show everything
+  label_size = 2.5
+)
+
+viz_data_filtered <- values_fig(key_viz)
+
+
+climate_keyword_plot <- viz_data_filtered %>%
+  filter(`Proportion(%)` > 0) %>%
+  ggplot(aes(x = reorder(Word, `Proportion(%)`), y = `Proportion(%)`, fill = Topic)) +
+  geom_col() +
+  coord_flip() +
+  labs(x = "Keyword", y = "Proportion (%)", fill = "Topic Group") +
+  theme_minimal() +
+  theme(
+    plot.background = element_rect(fill = "white", color = NA),
+    panel.background = element_rect(fill = "white", color = NA)
+  )
+
+
+climate_keyword_plot
+```
+
+
+```{r}
+calc_eti <- function(vec, ci = 0.95, point = "mean") {
+  if (point == "mean") {
+    point_est <- mean(vec)
+  } else {
+    point_est <- median(vec)
+  }
+  
+  probs <- c((1 - ci)/2, (1 + ci)/2)
+  qua <- stats::quantile(vec, probs = c((1 - ci)/2, (1 + 
+            ci)/2))
+  
+  return(list(Lower = qua[1], Point = point_est, Upper = qua[2]))
+}
+```
+
+
+```{r}
 # Access model and metadata for income group 1
 model_1      <- model_outputs[["income_1"]]$model
 year_labels  <- sort((model_outputs[["income_1"]]$docvars$Year))
 
-# Plot with year labels
-plot_timetrend(model_1, time_index_label = year_labels, xlab = "Year")
+# KeyATM plot
+keyATM_plot <- plot_timetrend(model_1, 
+                            time_index_label = year_labels,
+                            xlab = "Year",
+                            ci = 0.95, 
+                            show_point = FALSE, 
+                            method = "eti")
 
+keyATM_plot
 ```
 
-```{r}
-# Access model and metadata for income group 2
-model_2      <- model_outputs[["income_2"]]$model
-year_labels  <- sort((model_outputs[["income_2"]]$docvars$Year))
-
-# Plot with year labels
-plot_timetrend(model_2, time_index_label = year_labels, xlab = "Year")
-```
 
 
 ```{r}
-# Access model and metadata for income group 1
-model_3      <- model_outputs[["income_3"]]$model
-year_labels  <- sort((model_outputs[["income_3"]]$docvars$Year))
+library(tidyverse)
+library(patchwork)
 
-# Plot with year labels
-plot_timetrend(model_3, time_index_label = year_labels, xlab = "Year")
+## 1. Create a function to process each income group
+process_income_group <- function(income_level) {
+  model <- model_outputs[[paste0("income_", income_level)]]$model
+  theta <- model$theta[, 1]  # Topic 1 proportions
+  
+  data.frame(
+    Year = model_outputs[[paste0("income_", income_level)]]$docvars$Year,
+    Theta = theta,
+    Income_Group = factor(paste("Income", income_level))
+  )
+}
+
+
+## 2. Combine all income groups
+all_income_data <- map_dfr(1:4, process_income_group)
+
+## 3. Calculate ETI for each group-year combination
+summary_stats <- all_income_data %>%
+  group_by(Income_Group, Year) %>%
+  summarise(
+    ci = list(calc_eti(Theta, ci = 0.95, point = "mean")),
+    .groups = "drop"
+  ) %>%
+  unnest_wider(ci) %>%
+  rename(mean_theta = Point, ci_lower = Lower, ci_upper = Upper)
+
+## 4. Create the combined plot
+combined_plot <- ggplot(summary_stats, aes(x = Year, y = mean_theta, 
+                                        color = Income_Group, fill = Income_Group)) +
+  geom_line(size = 0.8) +
+  geom_ribbon(aes(ymin = ci_lower, ymax = ci_upper), 
+              alpha = 0.2, color = NA) +
+  geom_point(size = 1.5) +
+  labs(
+    title = "Climate Prevalence Across Income Groups",
+    subtitle = "Mean ± 95% ETI",
+    y = expression(paste("Mean of ", theta)),
+    color = "Income Group",
+    fill = "Income Group"
+  ) +
+  theme_bw() +
+    theme(
+      legend.position = "bottom",
+      plot.title = element_text(hjust = 0.5, face = "bold"),
+      plot.subtitle = element_text(hjust = 0.5),
+      panel.grid.minor = element_blank()
+    ) +
+  scale_color_brewer(palette = "Set1") +
+  scale_fill_brewer(palette = "Set1")
+
+## 5. Alternative: Faceted version
+faceted_plot <- ggplot(summary_stats, aes(x = Year, y = mean_theta)) +
+  geom_line(color = "blue") +
+  geom_ribbon(aes(ymin = ci_lower, ymax = ci_upper), 
+             alpha = 0.2, fill = "gray75") +
+  geom_point(size = 1, color = "blue") +
+  facet_wrap(~Income_Group, ncol = 2) +
+  labs(
+    title = "Climate Prevalence by Income Group",
+    y = expression(paste("Mean of ", theta))
+  ) +
+  theme_bw() +
+    theme(
+      legend.position = "bottom",
+      plot.title = element_text(hjust = 0.5, face = "bold"),
+      plot.subtitle = element_text(hjust = 0.5),
+      panel.grid.minor = element_blank()
+    )
+
+## Display the plots
+combined_plot  # Single plot with all groups
+# OR
+faceted_plot   # Separate panels for each group
+
+## Save high-quality output
+ggsave("income_group_comparison_combined.png", combined_plot, width = 10, height = 6, dpi = 300)
+ggsave("income_group_comparison_facteted.png", faceted_plot, width = 10, height = 6, dpi = 300)
 ```
 
-```{r}
-# Access model and metadata for income group 1
-model_4      <- model_outputs[["income_4"]]$model
-year_labels  <- sort((model_outputs[["income_4"]]$docvars$Year))
-
-# Plot with year labels
-plot_timetrend(model_4, time_index_label = year_labels, xlab = "Year")
-```
 
 
 ```{r}
@@ -727,7 +867,7 @@ prepare_keyATM_data <- function(df, income_level, bigrams, climate_keywords_dict
   saveRDS(
     model_result,
     file = paste0(
-      "C:/Users/Alvaro Millan Ruiz/OneDrive/Escritorio/BDS/Block_5/NLP/Project/keyATM_model_time_dict",
+      "C:/Users/alvar/OneDrive/Escritorio/BDS/Block_5/NLP/Project/keyATM_model_time_dict",
       income_level,
       ".rds"
     )
@@ -744,48 +884,105 @@ prepare_keyATM_data <- function(df, income_level, bigrams, climate_keywords_dict
 
 income_level <- c(1, 2, 3, 4)
 
-model_outputs <- list()
+model_outputs_dict <- list()
 
 for (i in income_level) {
   cat("Running model for income level", i, "\n")
-  model_outputs[[paste0("income_", i)]] <- prepare_keyATM_data(topic_modelling_df, i, bigrams, climate_keywords_dict)
+  model_outputs_dict[[paste0("income_", i)]] <- prepare_keyATM_data(topic_modelling_df, i, bigrams, climate_keywords_dict)
 }
 ```
 
+
+
 ```{r}
 # Access model and metadata for income group 1
-model_1      <- model_outputs[["income_1"]]$model
-year_labels  <- sort((model_outputs[["income_1"]]$docvars$Year))
+model_1      <- model_outputs_dict[["income_1"]]$model
+year_labels  <- sort((model_outputs_dict[["income_1"]]$docvars$Year))
 
 # Plot with year labels
 plot_timetrend(model_1, time_index_label = year_labels, xlab = "Year")
 ```
 
-```{r}
-# Access model and metadata for income group 2
-model_2      <- model_outputs[["income_2"]]$model
-year_labels  <- sort((model_outputs[["income_2"]]$docvars$Year))
-
-# Plot with year labels
-plot_timetrend(model_2, time_index_label = year_labels, xlab = "Year")
-```
 
 ```{r}
-# Access model and metadata for income group 2
-model_3      <- model_outputs[["income_3"]]$model
-year_labels  <- sort((model_outputs[["income_3"]]$docvars$Year))
+library(ggplot2)
+library(dplyr)
+library(purrr)
 
-# Plot with year labels
-plot_timetrend(model_3, time_index_label = year_labels, xlab = "Year")
+# 1. Data preparation function
+prepare_topic_data <- function(topic_number) {
+  map_dfr(1:4, ~{
+    model <- model_outputs_dict[[paste0("income_", .x)]]$model
+    data.frame(
+      Year = model_outputs_dict[[paste0("income_", .x)]]$docvars$Year,
+      Theta = model$theta[, topic_number],
+      Income_Group = factor(paste("Income", .x), 
+                           levels = paste("Income", 1:4))
+    )
+  }) %>% 
+    group_by(Income_Group, Year) %>% 
+    summarise(
+      mean_theta = mean(Theta),
+      ci_lower = quantile(Theta, 0.025),
+      ci_upper = quantile(Theta, 0.975),
+      .groups = "drop"
+    )
+}
+
+# 2. Create consistent plotting function
+create_topic_plot <- function(data, topic_name) {
+  ggplot(data, aes(x = Year, y = mean_theta, 
+                  color = Income_Group, fill = Income_Group)) +
+    geom_line(linewidth = 0.8) +
+    geom_ribbon(aes(ymin = ci_lower, ymax = ci_upper), 
+                alpha = 0.2, color = NA) +
+    geom_point(size = 2.5) +
+    scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.05))) +
+    scale_color_manual(values = c("#E41A1C", "#377EB8", "#4DAF4A", "#984EA3")) +
+    scale_fill_manual(values = c("#E41A1C", "#377EB8", "#4DAF4A", "#984EA3")) +
+    labs(
+      title = paste(topic_name, "Prevalence Across Income Groups"),
+      subtitle = "Mean ± 95% ETI",
+      y = expression(paste("Mean of ", theta)),
+      x = "Year"
+    ) +
+    theme_bw() +
+    theme(
+      legend.position = "bottom",
+      plot.title = element_text(hjust = 0.5, face = "bold"),
+      plot.subtitle = element_text(hjust = 0.5),
+      panel.grid.minor = element_blank()
+    )
+}
+
+# 3. Create and save all plots
+topic_names <- c("Science Impacts", "Policy Agreements", 
+                 "Carbon Emissions", "Climate Actions & Solutions", 
+                 "Sociopolitical Climate Issues")
+
+walk(1:5, ~{
+  topic_data <- prepare_topic_data(.x)
+  p <- create_topic_plot(topic_data, topic_names[.x])
+  
+  # Save each plot
+  ggsave(paste0("topic_", .x, "_prevalence.png"), p, 
+         width = 8, height = 6, dpi = 300)
+  
+  # Print to screen
+  print(p)
+})
+
+# 4. Combine all plots into one multi-panel figure (alternative)
+all_plots <- map(1:5, ~{
+  create_topic_plot(prepare_topic_data(.x), topic_names[.x]) + 
+    theme(legend.position = "none")
+})
+
+combined_plot <- wrap_plots(all_plots, ncol = 2, guides = "collect") + 
+  plot_annotation(tag_levels = "a") &
+  theme(legend.position = "bottom")
+
+ggsave("all_topics_combined.png", combined_plot, 
+       width = 12, height = 14, dpi = 300)
 ```
-
-```{r}
-# Access model and metadata for income group 4
-model_4      <- model_outputs[["income_4"]]$model
-year_labels  <- sort((model_outputs[["income_4"]]$docvars$Year))
-
-# Plot with year labels
-plot_timetrend(model_4, time_index_label = year_labels, xlab = "Year")
-```
-
 
