@@ -48,7 +48,7 @@ bigrams <- read.csv("C:/Users/alvar/OneDrive/Escritorio/BDS/Block_5/NLP/Project/
 ```
 
 ```{r}
-bigrams = c("climate change", "global warming", "global warm","cap and trade", "paris accord", "emissions trading", "global average temperature", "kyoto protocol", "changing climate" ,"climate resilience","climate decay", "carbon dioxide", "carbon-dioxide","climate politics", "framework convention climate change", "bali roadmap", "bali action plan", "greenhouse gas", "greenhouse-gas","greenhouse effect", "climate mitigation", "climate action", "emissions", "temperature", "extreme weather", "global environmental change", "global environment", "global environmental" ,"climate variability", "low carbon", "renewable energy", "carbon emission", "climate pollutant", "climate pollutants", "carbon tax", "carbon footprint", "carbon neutrality", "net-zero","net zero","net-zero","climate crisis", "climate summit", "climate catastrophe", "climate justice", "climate emergency", "climate funding", "climate fund", "climate financing", "climate finance","climate peace", "climate agreement", "climate security", "climate ambition", "climate issue", "climate impact", "climate conference", "climate event", "climate challenge", "climate trust", "climate negotiation", "climate catastrophe", "climate risk", "climate goal", "climate change-related", "climate regime", "climate resilient", "climate policy", "carbon market", "carbon sink", "green climate", "green economy", "emission reduction", "emissions reduction", "carbon neutral","ozone layer", "emissions trading scheme", "co2 emission")
+bigrams = c("climate change", "global warming", "global warm","cap and trade", "paris accord", "emissions trading", "global average temperature", "kyoto protocol", "changing climate" ,"climate resilience","climate decay", "carbon dioxide", "carbon-dioxide","climate politics", "framework convention climate change", "bali roadmap", "bali action plan", "greenhouse gas", "greenhouse-gas","greenhouse effect", "climate mitigation", "climate action", "emissions", "temperature", "extreme weather", "global environmental change", "global environment", "global environmental" ,"climate variability", "low carbon", "renewable energy", "carbon emission", "climate pollutant", "climate pollutants", "carbon tax", "carbon footprint", "carbon neutrality", "net-zero","net zero","net-zero","climate crisis", "climate summit", "climate catastrophe", "climate justice", "climate emergency", "climate funding", "climate fund", "climate financing", "climate finance","climate peace", "climate agreement", "climate security", "climate ambition", "climate issue", "climate impact", "climate conference", "climate event", "climate challenge", "climate trust", "climate negotiation", "climate catastrophe", "climate risk", "climate goal", "climate change-related", "climate regime", "climate resilient", "climate policy", "carbon market", "carbon sink", "green climate", "green economy", "emission reduction", "emissions reduction", "carbon neutral","ozone layer", "emissions trading scheme", "co2 emission", "united nation")
 
 tokenized_docs <- strsplit(topic_modelling_df$text, " ")
 
@@ -208,9 +208,7 @@ model <- readRDS("C:/Users/alvar/OneDrive/Escritorio/BDS/Block_5/NLP/Project/key
 model_dict <- readRDS("C:/Users/alvar/OneDrive/Escritorio/BDS/Block_5/NLP/Project/keyATM_model_dict.rds")
 ```
 
-```{r}
-model_dict$
-```
+
 
 
 
@@ -523,6 +521,44 @@ ggsave(
 ```
 
 ```{r}
+library(dplyr)
+
+compute_diff_with_ci <- function(res_df, group_label) {
+  before_label <- paste0(group_label, " (1990–2014)")
+  after_label  <- paste0(group_label, " (2015–24)")
+
+  before <- res_df %>% filter(label == before_label) %>%
+    select(Topic, Point_before = Point, Lower_before = Lower, Upper_before = Upper) %>%
+    mutate(SE_before = (Upper_before - Lower_before) / (2 * 1.96))
+  
+  after <- res_df %>% filter(label == after_label) %>%
+    select(Topic, Point_after = Point, Lower_after = Lower, Upper_after = Upper) %>%
+    mutate(SE_after = (Upper_after - Lower_after) / (2 * 1.96))
+
+  diff_tbl <- inner_join(after, before, by = "Topic") %>%
+    mutate(
+      diff_mean = Point_after - Point_before,
+      SE_diff = sqrt(SE_before^2 + SE_after^2),  # assuming independence
+      diff_lower = diff_mean - 1.96 * SE_diff,
+      diff_upper = diff_mean + 1.96 * SE_diff,
+      Income_Group = group_label
+    ) %>%
+    select(Income_Group, Topic, diff_mean, diff_lower, diff_upper)
+  
+  return(diff_tbl)
+}
+
+# Apply function to all income groups
+income_groups <- c("High", "Upper-Middle", "Lower-Middle", "Low")
+final_diff_table <- bind_rows(lapply(income_groups, function(g) compute_diff_with_ci(res, g)))
+
+# Print nicely
+print(final_diff_table)
+
+```
+
+
+```{r}
 model_2 <- readRDS("C:/Users/alvar/OneDrive/Escritorio/BDS/Block_5/NLP/Project/keyATM_model_time2015.rds")
 
 est_G1 <- get_strata_estimates(model_2, "GroupPeriodHigh_Before2015", "High_Before2015")
@@ -588,6 +624,14 @@ ggsave(
 
 ```
 
+```{r}
+# Apply function to all income groups
+income_groups <- c("High", "Upper-Middle", "Lower-Middle", "Low")
+final_diff_table_1 <- bind_rows(lapply(income_groups, function(g) compute_diff_with_ci(res, g)))
+
+# Print nicely
+print(final_diff_table_1)
+```
 
 
 # TIME BIIITCH
@@ -672,30 +716,58 @@ for (i in income_level) {
 
 
 ```{r}
-key_viz <- visualize_keywords(
-  docs = keyATM_docs,
-  keywords = climate_keywords_dict,
-  prune = TRUE, # or even Inf to show everything
-  label_size = 2.5
-)
+library(dplyr)
+library(ggplot2)
+library(purrr)
+library(keyATM)  # if not already loaded
 
-viz_data_filtered <- values_fig(key_viz)
-
-
-climate_keyword_plot <- viz_data_filtered %>%
-  filter(`Proportion(%)` > 0) %>%
-  ggplot(aes(x = reorder(Word, `Proportion(%)`), y = `Proportion(%)`, fill = Topic)) +
-  geom_col() +
-  coord_flip() +
-  labs(x = "Keyword", y = "Proportion (%)", fill = "Topic Group") +
-  theme_minimal() +
-  theme(
-    plot.background = element_rect(fill = "white", color = NA),
-    panel.background = element_rect(fill = "white", color = NA)
+for (i in 1:4) {
+  income_key <- paste0("income_", i)
+  
+  cat("Creating keyword plot for", income_key, "\n")
+  
+  keyATM_docs <- model_outputs[[income_key]]$keyATM_docs
+  
+  # Step 1: Create keyword visualization object
+  key_viz <- visualize_keywords(
+    docs = keyATM_docs,
+    keywords = climate_keywords_dict,  # replace with your actual keyword dict variable
+    prune = TRUE,
+    label_size = 2.5
   )
+  
+  # Step 2: Extract proportions
+  viz_data_filtered <- values_fig(key_viz)
+  
+  # Step 3: Filter and plot
+  climate_keyword_plot <- viz_data_filtered %>%
+    filter(`Proportion(%)` > 0) %>%
+    ggplot(aes(x = reorder(Word, `Proportion(%)`), y = `Proportion(%)`, fill = Topic)) +
+    geom_col() +
+    coord_flip() +
+    labs(
+      x = "Keyword",
+      y = "Proportion (%)",
+      fill = "Topic Group",
+      title = paste("Keyword Proportions for Income Group", i)
+    ) +
+    theme_minimal() +
+    theme(
+      plot.background = element_rect(fill = "white", color = NA),
+      panel.background = element_rect(fill = "white", color = NA)
+    )
+  
+  # Step 4: Save the plot
+  ggsave(
+    filename = paste0("keyword_proportion_income_", i, ".png"),
+    plot = climate_keyword_plot,
+    path = "C:/Users/alvar/OneDrive/Escritorio/BDS/Block_5/NLP/Project/NLP_BDS",
+    width = 10,
+    height = 6,
+    dpi = 300
+  )
+}
 
-
-climate_keyword_plot
 ```
 
 
@@ -715,44 +787,80 @@ calc_eti <- function(vec, ci = 0.95, point = "mean") {
 }
 ```
 
-
 ```{r}
-# Access model and metadata for income group 1
-model_1      <- model_outputs[["income_1"]]$model
-year_labels  <- sort((model_outputs[["income_1"]]$docvars$Year))
-
-# KeyATM plot
-keyATM_plot <- plot_timetrend(model_1, 
-                            time_index_label = year_labels,
-                            xlab = "Year",
-                            ci = 0.95, 
-                            show_point = FALSE, 
-                            method = "eti")
-
-keyATM_plot
-```
-
-
-
-```{r}
-library(tidyverse)
-library(patchwork)
-
-## 1. Create a function to process each income group
 process_income_group <- function(income_level) {
   model <- model_outputs[[paste0("income_", income_level)]]$model
-  theta <- model$theta[, 1]  # Topic 1 proportions
+  theta <- model$theta[, 1]
+  docvars_df <- model_outputs[[paste0("income_", income_level)]]$docvars
   
   data.frame(
-    Year = model_outputs[[paste0("income_", income_level)]]$docvars$Year,
-    Theta = theta,
-    Income_Group = factor(paste("Income", income_level))
+    Country = docvars_df$ISO.Code,  # <-- Must be present in your metadata
+    Year = docvars_df$Year,
+    Income_Group = factor(paste("Income", income_level)),
+    Theta = theta
   )
 }
 
-
-## 2. Combine all income groups
 all_income_data <- map_dfr(1:4, process_income_group)
+```
+
+
+```{r}
+library(tidyr)
+## 3. Calculate ETI for each group-year combination
+summary_stats_old <- all_income_data %>%
+  group_by(Income_Group, Year) %>%
+  summarise(
+    ci = list(calc_eti(Theta, ci = 0.95, point = "mean")),
+    .groups = "drop"
+  ) %>%
+  unnest_wider(ci) %>%
+  rename(mean_theta = Point, ci_lower = Lower, ci_upper = Upper)
+
+# 4. Calculate weights based on proportion of countries in each income group per year
+country_weights <- all_income_data %>%
+  group_by(Year, Income_Group) %>%
+  summarise(n_countries = n(), .groups = "drop_last") %>%
+  mutate(weight = n_countries / sum(n_countries)) %>%
+  ungroup()
+
+adjusted_data <- summary_stats_old %>%
+  left_join(country_weights, by = c("Year", "Income_Group")) 
+
+# Calculate adjusted theta (scaled by income group's proportion of countries)
+final_adjusted_data <- adjusted_data %>%
+  mutate(
+    adjusted_theta = mean_theta * weight,
+    adjusted_lower = ci_lower * weight,
+    adjusted_upper = ci_upper * weight
+  )
+
+
+weighted_plot <- ggplot(final_adjusted_data, 
+                       aes(x = Year, y = adjusted_theta, 
+                      color = Income_Group, fill = Income_Group)) +
+  geom_line(size = 0.8) +
+  geom_ribbon(aes(ymin = adjusted_lower, ymax = adjusted_upper), 
+              alpha = 0.2, color = NA) +
+  geom_point(size = 1.5) +
+  # Styling (preserving your preferred theme)
+  labs(
+    title = "Climate Prevalence Across Income Groups",
+    subtitle = "Mean θ ± 95% ETI | Group's proportion of countries by Income group",
+    y = expression(paste("Mean topic prevalence (", theta, ")")),
+    color = "Income Group",
+    fill = "Income Group",
+    size = "Group size weight"
+  ) +
+  theme_bw() +
+    theme(
+      legend.position = "bottom",
+      plot.title = element_text(hjust = 0.5, face = "bold"),
+      plot.subtitle = element_text(hjust = 0.5),
+      panel.grid.minor = element_blank()
+    ) +
+  scale_color_brewer(palette = "Set1") +
+  scale_fill_brewer(palette = "Set1")
 
 ## 3. Calculate ETI for each group-year combination
 summary_stats <- all_income_data %>%
@@ -788,35 +896,15 @@ combined_plot <- ggplot(summary_stats, aes(x = Year, y = mean_theta,
   scale_color_brewer(palette = "Set1") +
   scale_fill_brewer(palette = "Set1")
 
-## 5. Alternative: Faceted version
-faceted_plot <- ggplot(summary_stats, aes(x = Year, y = mean_theta)) +
-  geom_line(color = "blue") +
-  geom_ribbon(aes(ymin = ci_lower, ymax = ci_upper), 
-             alpha = 0.2, fill = "gray75") +
-  geom_point(size = 1, color = "blue") +
-  facet_wrap(~Income_Group, ncol = 2) +
-  labs(
-    title = "Climate Prevalence by Income Group",
-    y = expression(paste("Mean of ", theta))
-  ) +
-  theme_bw() +
-    theme(
-      legend.position = "bottom",
-      plot.title = element_text(hjust = 0.5, face = "bold"),
-      plot.subtitle = element_text(hjust = 0.5),
-      panel.grid.minor = element_blank()
-    )
-
 ## Display the plots
 combined_plot  # Single plot with all groups
-# OR
-faceted_plot   # Separate panels for each group
+# or
+weighted_plot
 
 ## Save high-quality output
 ggsave("income_group_comparison_combined.png", combined_plot, width = 10, height = 6, dpi = 300)
-ggsave("income_group_comparison_facteted.png", faceted_plot, width = 10, height = 6, dpi = 300)
+ggsave("income_group_comparison_combined_weighted.png", weighted_plot, width = 10, height = 6, dpi = 300)
 ```
-
 
 
 ```{r}
@@ -893,15 +981,55 @@ for (i in income_level) {
 ```
 
 
-
 ```{r}
-# Access model and metadata for income group 1
-model_1      <- model_outputs_dict[["income_1"]]$model
-year_labels  <- sort((model_outputs_dict[["income_1"]]$docvars$Year))
-
-# Plot with year labels
-plot_timetrend(model_1, time_index_label = year_labels, xlab = "Year")
+for (i in 1:4) {
+  income_key <- paste0("income_", i)
+  
+  cat("Creating keyword plot for", income_key, "\n")
+  
+  keyATM_docs <- model_outputs_dict[[income_key]]$keyATM_docs
+  
+  # Step 1: Create keyword visualization object
+  key_viz <- visualize_keywords(
+    docs = keyATM_docs,
+    keywords = climate_keywords_dict,  # replace with your actual keyword dict variable
+    prune = TRUE,
+    label_size = 2.5
+  )
+  
+  # Step 2: Extract proportions
+  viz_data_filtered <- values_fig(key_viz)
+  
+  # Step 3: Filter and plot
+  climate_keyword_plot <- viz_data_filtered %>%
+    filter(`Proportion(%)` > 0) %>%
+    ggplot(aes(x = reorder(Word, `Proportion(%)`), y = `Proportion(%)`, fill = Topic)) +
+    geom_col() +
+    coord_flip() +
+    labs(
+      x = "Keyword",
+      y = "Proportion (%)",
+      fill = "Topic Group",
+      title = paste("Keyword Proportions for Income Group", i)
+    ) +
+    theme_minimal() +
+    theme(
+      plot.background = element_rect(fill = "white", color = NA),
+      panel.background = element_rect(fill = "white", color = NA)
+    )
+  
+  # Step 4: Save the plot
+  ggsave(
+    filename = paste0("keyword_proportion_income_", i, "dict_model.png"),
+    plot = climate_keyword_plot,
+    path = "C:/Users/alvar/OneDrive/Escritorio/BDS/Block_5/NLP/Project/NLP_BDS",
+    width = 10,
+    height = 6,
+    dpi = 300
+  )
+}
 ```
+
 
 
 ```{r}
@@ -917,7 +1045,7 @@ prepare_topic_data <- function(topic_number) {
       Year = model_outputs_dict[[paste0("income_", .x)]]$docvars$Year,
       Theta = model$theta[, topic_number],
       Income_Group = factor(paste("Income", .x), 
-                           levels = paste("Income", 1:4))
+      levels = paste("Income", 1:4))
     )
   }) %>% 
     group_by(Income_Group, Year) %>% 
@@ -978,11 +1106,181 @@ all_plots <- map(1:5, ~{
     theme(legend.position = "none")
 })
 
-combined_plot <- wrap_plots(all_plots, ncol = 2, guides = "collect") + 
-  plot_annotation(tag_levels = "a") &
-  theme(legend.position = "bottom")
+```
 
-ggsave("all_topics_combined.png", combined_plot, 
-       width = 12, height = 14, dpi = 300)
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(purrr)
+library(dplyr)
+
+prepare_topic_data <- function(topic_number) {
+  map_dfr(1:4, ~{
+    model <- model_outputs_dict[[paste0("income_", .x)]]$model
+    docvars <- model_outputs_dict[[paste0("income_", .x)]]$docvars
+    
+    # Create dataframe with all required columns
+    data.frame(
+      Year = docvars$Year,
+      ISO_Code = docvars$ISO.Code,  # Using the confirmed column name
+      Theta = model$theta[, topic_number],
+      Income_Group = factor(paste("Income", .x), levels = paste("Income", 1:4)),
+      stringsAsFactors = FALSE
+    )
+  }) 
+}
+
+# Get all topics data with ISO codes
+all_topics_data <- map_dfr(1:5, ~{
+  prepare_topic_data(.x) %>% 
+    mutate(Topic = paste("Topic", .x))
+})
+
+# 1. Calculate weights PER TOPIC
+topic_country_weights <- all_topics_data %>%
+  group_by(Topic) %>%  # First group by topic
+  distinct(Year, Income_Group, ISO_Code) %>%
+  count(Year, Income_Group, name = "n_countries") %>%
+  group_by(Topic, Year) %>%  # Then group by topic AND year
+  mutate(prop = n_countries / sum(n_countries)) %>%
+  ungroup()
+
+## 3. Calculate ETI for each group-year-topic combination
+summary_stats_old_topic <- all_topics_data %>%
+  group_by(Income_Group, Year, Topic) %>%
+  summarise(
+    ci = list(calc_eti(Theta, ci = 0.95, point = "mean")),
+    .groups = "drop"
+  ) %>%
+  unnest_wider(ci) %>%
+  rename(mean_theta = Point, ci_lower = Lower, ci_upper = Upper)
+
+adjusted_data_dict <- summary_stats_old_topic %>%
+  left_join(topic_country_weights, by = c("Topic", "Year", "Income_Group"))
+
+final_adjusted_data <- summary_stats_old_topic %>%
+  left_join(topic_country_weights, by = c("Topic", "Year", "Income_Group")) %>%
+  rename(weight = prop) %>%  # First rename weight to prop
+  mutate(
+    # Then use prop for calculations (NOT weight, which no longer exists after rename)
+    adjusted_theta = mean_theta * weight,
+    adjusted_lower = ci_lower * weight,
+    adjusted_upper = ci_upper * weight
+  )
+
+
+create_weighted_plot <- function(data, topic_name) {
+  ggplot(data, aes(x = Year, y = adjusted_theta, 
+                  color = Income_Group, fill = Income_Group)) +
+    geom_line(linewidth = 0.8) +
+    geom_ribbon(aes(ymin = adjusted_lower, ymax = adjusted_upper), 
+                alpha = 0.2, color = NA) +
+    geom_point(size = 2.5) +
+    scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.05))) +
+    scale_color_manual(values = c("#E41A1C", "#377EB8", "#4DAF4A", "#984EA3")) +
+    scale_fill_manual(values = c("#E41A1C", "#377EB8", "#4DAF4A", "#984EA3")) +
+    #scale_size_continuous(
+    #  range = c(2, 6),
+    #  breaks = c(min(data$n_countries), 
+    #            median(data$n_countries), 
+    #            max(data$n_countries)),
+    #  name = "Number of countries"
+    # ) +
+    labs(
+      title = paste(topic_name, "Prevalence (Weighted)"),
+      subtitle = "Adjusted Mean θ ± 95% ETI | Group's proportion of countries by Income group",
+      y = expression(paste("Weighted Mean ", theta)),
+      x = "Year"
+    ) +
+    theme_bw() +
+    theme(
+      legend.position = "bottom",
+      legend.box = "horizontal",
+      plot.title = element_text(hjust = 0.5, face = "bold"),
+      plot.subtitle = element_text(hjust = 0.5),
+      panel.grid.minor = element_blank(),
+      legend.spacing.x = unit(0.2, "cm")
+    )
+}
+
+# 3. Create and save all plots
+topic_names <- c("Science Impacts", "Policy Agreements", 
+                 "Carbon Emissions", "Climate Actions & Solutions", 
+                 "Sociopolitical Climate Issues")
+
+# Loop to create and save weighted topic plots
+walk(1:5, ~{
+  topic_index <- .x
+  topic_label <- paste("Topic", topic_index)
+  
+  # Filter data for this topic
+  topic_data <- final_adjusted_data %>% 
+    filter(Topic == topic_label)
+  
+  # Create the plot using the correct function name
+  p <- create_weighted_plot(topic_data, topic_names[topic_index])
+  
+  # Save each plot (ggsave was missing)
+  ggsave(
+    filename = paste0("topic_", topic_index, "_prevalence_WEIGHTED.png"),
+    plot = p,
+    path = "C:/Users/alvar/OneDrive/Escritorio/BDS/Block_5/NLP/Project/NLP_BDS",
+    width = 8,
+    height = 6,
+    dpi = 300
+  )
+  
+  # Print to screen
+  print(p)
+})
+
+```
+
+```{r}
+# 1. Data preparation (keep raw Theta values)
+prepare_topic_data <- function(topic_number) {
+  map_dfr(1:4, ~{
+    model <- model_outputs_dict[[paste0("income_", .x)]]$model
+    docvars <- model_outputs_dict[[paste0("income_", .x)]]$docvars
+    
+    data.frame(
+      Year = docvars$Year,
+      ISO_Code = docvars$ISO.Code,
+      Theta = model$theta[, topic_number],
+      Income_Group = factor(paste("Income", .x), levels = paste("Income", 1:4)),
+      stringsAsFactors = FALSE
+    )
+  }) 
+}
+
+# 2. Get all topics data
+all_topics_data <- map_dfr(1:5, ~{
+  prepare_topic_data(.x) %>% 
+    mutate(Topic = factor(paste("Topic", .x)))
+})
+
+# 3. Calculate topic-specific weights
+topic_weights <- all_topics_data %>%
+  group_by(Topic, Year, Income_Group) %>%
+  summarise(
+    n_countries = n_distinct(ISO_Code),
+    .groups = "drop"
+  ) %>%
+  group_by(Topic, Year) %>%
+  mutate(weight = n_countries / sum(n_countries)) %>%
+  ungroup()
+
+# 4. Join weights and calculate weighted statistics
+final_results <- all_topics_data %>%
+  left_join(topic_weights, by = c("Topic", "Year", "Income_Group")) %>%
+  group_by(Topic, Year) %>%
+  summarise(
+    weighted_mean = weighted.mean(Theta, w = weight),
+    weighted_ci_lower = quantile(Theta * weight, 0.025),
+    weighted_ci_upper = quantile(Theta * weight, 0.975),
+    n_countries = sum(n_countries),
+    .groups = "drop"
+  )
 ```
 
